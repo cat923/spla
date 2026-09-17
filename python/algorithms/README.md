@@ -37,14 +37,6 @@ cd algorithms
 ---
 
 ## Usage
-
-Two entry points are available:
-
-- `main_spla.py` — GPU version (SPLA)
-- `main_classic.py` — CPU reference version
-
-Both scripts use the same CLI arguments.
-
 ```text
 usage: main_spla.py [-h] --algo {bfs,sssp,pr,tc} [-m MATRIX] [-v VECTORS] [-o OUTPUT] [-s START] [-a ALPHA] [-e EPS]
 
@@ -85,9 +77,6 @@ python main_spla.py --algo pr -v graph.txt -a 0.85 -e 1e-6 -o pr_result.txt
 
 # Triangle Counting
 python main_spla.py --algo tc -m graph.mtx -o tc_result.txt
-
-# Classic reference version
-python main_classic.py --algo bfs -v graph.txt -s 0 -o bfs_classic.txt
 ```
 
 ---
@@ -104,7 +93,6 @@ Two options:
 
 Example 
 ```text
-3          # number of vertices n 
 0 1 2      # I: source vertex indices
 1 2 0      # J: target vertex indices
 5 3 2      # V: edge weights 
