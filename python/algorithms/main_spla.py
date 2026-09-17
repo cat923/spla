@@ -2,10 +2,10 @@ import argparse
 import sys
 import math
 from pathlib import Path
-from bfs_spla import bfs
-from sssp_spla import sssp
-from pr_spla import pr_spla as pr
-from tc_spla import tc_spla
+from bfs_spla import bfs_spla 
+from sssp_spla import sssp_spla 
+from pr_spla import pr_spla 
+from tc_spla import tc_spla 
 from graph_spla import (
     read_spla,
     read_vectors_spla,
@@ -35,7 +35,7 @@ def main():
             A = read_spla(str(args.matrix), dtype=INT)
         else:
             A = read_vectors_spla(str(args.vectors), dtype=INT)
-        v, count, depth = bfs(args.start, A)
+        v, count, depth = bfs_spla(args.start, A)
         with open(args.output, "w") as f_out:
             f_out.write(f"Reached vertices: {count}\n")
             f_out.write(f"Max depth: {depth - 1}\n")
@@ -49,7 +49,7 @@ def main():
             A = read_spla(str(args.matrix), dtype=FLOAT)
         else:
             A = read_vectors_spla(str(args.vectors), dtype=FLOAT)
-        v = sssp(args.start, A)
+        v = sssp_spla(args.start, A)
         with open(args.output, "w") as f_out:
             idx, vals = v.to_lists()
             for k in range(len(idx)):
@@ -62,7 +62,7 @@ def main():
             A = read_mtx_pr_spla(str(args.matrix), alpha=args.alpha)
         else:
             A = read_vectors_pr_spla(str(args.vectors), alpha=args.alpha)
-        p = pr(A, args.alpha, args.eps)
+        p = pr_spla(A, args.alpha, args.eps)
         with open(args.output, "w") as f_out:
             idx, vals = p.to_lists()
             for k in range(len(idx)):

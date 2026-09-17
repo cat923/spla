@@ -1,7 +1,6 @@
 from pyspla import INT, Matrix, Scalar, Vector
 
-
-def bfs(s: int, A: Matrix):
+def bfs_spla(s: int, A: Matrix):
     v = Vector(A.n_rows, INT)
     front = Vector.from_lists([s], [1], A.n_rows, INT)
     front_size = 1

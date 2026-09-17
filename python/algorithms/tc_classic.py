@@ -1,4 +1,4 @@
-def tc_simple(graph, n):
+def tc_naive(graph, n):
     triangles = 0
 
     for i in range(n):
