@@ -15,11 +15,13 @@ def clone_vector(v: Vector):
 
 
 
-def sssp(start: int, A: Matrix):
+
+def sssp_spla(start: int, A: Matrix):
     n = A.n_rows
+    A=A.transpose()
     dist = Vector.dense(n, FLOAT, INF)
     dist.set(start, 0.0)
-    mask = Vector.dense(n, FLOAT, 1.0)
+    mask = Vector.dense(n, FLOAT)
     init_inf = Scalar(FLOAT, INF)
     while True:
         prev = clone_vector(dist)
