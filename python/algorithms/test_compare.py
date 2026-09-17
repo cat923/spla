@@ -1,181 +1,202 @@
-import math
 import unittest
-from collections import defaultdict
-
-from bfs_classic import INF as BFS_INF
-from bfs_classic import bfs as bfs_c
-from bfs_spla import bfs as bfs_s
-from pr_classic import pagerank_classic as pr_c
-from pr_spla import pagerank as pr_s
-from sssp_classic import sssp as sssp_c
-from sssp_spla import sssp_spla as sssp_s
-from tc_classic import tc_simple as tc_c
-from tc_spla import cohen as tc_s
-
 from pyspla import FLOAT, INT, Matrix
+import math
+from collections import defaultdict
+from bfs_classic import bfs_naive as bfs_n
+from bfs_spla import bfs_spla as bfs_s
+from pr_classic import pagerank_naive as pr_n
+from pr_spla import pr_spla as pr_s
+from sssp_classic import sssp_naive as sssp_n
+from sssp_spla import sssp_spla as sssp_s
+from tc_classic import tc_naive as tc_n
+from tc_spla import tc_spla as tc_s
 
+INF = math.inf
+def vector_list(v, n):
+    idx, vals = v.to_lists()
+    depth = [None] * n
+    for i, val in zip(idx, vals):
+        depth[i] = val - 1  
+    return depth
+def build_graph(edges, n, directed=True, upper=False, weighted=False):
+    if upper:
+        edges = [(u, v) if u < v else (v, u) for u, v, *_ in edges]
+    if not weighted:
+        edges = [(u, v, 1) for u, v, *_ in edges]
+    graph = defaultdict(list)
+    for u, v, w in edges:
+        graph[u].append((v, w) if weighted else v)
+        if not directed:
+            graph[v].append((u, w) if weighted else u)
+    rows, cols, vals = zip(*sorted(edges)) if edges else ([], [], [])
+    dtype = FLOAT if weighted else INT
+    A = Matrix.from_lists(list(rows), list(cols), list(vals), (n, n), dtype)
+    return graph, A
 
-class TestCompareAlgorithms(unittest.TestCase):
-    def build_bfs_graph(self, edges, n):
-        graph_c = defaultdict(list)
-        I, J, V = [], [], []
-        for u, v in edges:
-            graph_c[u].append(v)
-            graph_c[v].append(u)
-            I.extend([u, v])
-            J.extend([v, u])
-            V.extend([1, 1])
-        return graph_c, Matrix.from_lists(I, J, V, shape=(n, n), dtype=INT)
+def build_pr(edges, n, alpha):
+    graph, _ = build_graph(edges, n)
+    Ai = [graph[i] for i in range(n)]
+    Ax = [[alpha / len(graph[i]) for _ in graph[i]] for i in range(n)]
+    rows, cols, vals = [], [], []
+    for u in range(n):
+        for v in graph[u]:
+            rows.append(u)
+            cols.append(v)
+            vals.append(alpha / len(graph[u]))
+    rows, cols, vals = zip(*sorted(zip(rows, cols, vals))) if rows else ([], [], [])
+    A = Matrix.from_lists(list(rows), list(cols), list(vals), (n, n), FLOAT)
+    return Ai, Ax, A
+class TestCompareBfs(unittest.TestCase):
+    def bfs_equal(self, n, edges, start):
+        graph, A = build_graph(edges, n)
+        depth_n = bfs_n(start, graph, n)
+        v_s, count_s, depth_s = bfs_s(start, A)
+        depth_s = vector_list(v_s, n)
+        self.assertEqual(depth_n, depth_s)
 
-    def build_sssp_graph(self, edges, n):
-        graph_c = defaultdict(list)
-        I, J, V = [], [], []
-        for u, v, w in edges:
-            graph_c[u].append((v, w))
-            graph_c[v].append((u, w))
-            I.extend([u, v])
-            J.extend([v, u])
-            V.extend([w, w])
-        return graph_c, Matrix.from_lists(I, J, V, shape=(n, n), dtype=FLOAT)
+    def test_single(self):
+        self.bfs_equal(1, [], 0)
 
-    def build_tc_graph(self, edges, n):
-        graph_c = defaultdict(list)
-        I, J, V = [], [], []
-        for u, v in edges:
-            graph_c[u].append(v)
-            graph_c[v].append(u)
-            I.extend([u, v])
-            J.extend([v, u])
-            V.extend([1, 1])
-        return graph_c, Matrix.from_lists(I, J, V, shape=(n, n), dtype=INT)
+    def test_edge(self):
+        self.bfs_equal(2, [(0,1)], 0)
 
-    def build_pr_graph(self, edges, n, alpha=0.85):
-        adj_in = defaultdict(list)
-        out_degree = [0] * n
-        I, J, V = [], [], []
-        for u, v in edges:
-            out_degree[u] += 1
-            if u != v:
-                out_degree[v] += 1
-        for u, v in edges:
-            adj_in[v].append(u)
-            I.append(u)
-            J.append(v)
-            V.append(alpha / out_degree[u])
-            if u != v:
-                adj_in[u].append(v)
-                I.append(v)
-                J.append(u)
-                V.append(alpha / out_degree[v])
-        return adj_in, out_degree, Matrix.from_lists(I, J, V, shape=(n, n), dtype=FLOAT)
+    def test_line(self):
+        self.bfs_equal(4, [(0,1), (1,2), (2,3)], 0)
 
-    def check_lists_equal(self, list1, list2):
-        self.assertEqual(len(list1), len(list2))
-        for k in range(len(list1)):
-            self.assertEqual(list1[k], list2[k], f"Mismatch at index {k}: {list1[k]} != {list2[k]}")
+    def test_star(self):
+        self.bfs_equal(4, [(0,1), (0,2), (0,3)], 0)
 
-    def check_lists_close(self, list1, list2, tol=1e-3):
-        self.assertEqual(len(list1), len(list2))
-        for k in range(len(list1)):
-            self.assertTrue(
-                math.isclose(list1[k], list2[k], rel_tol=tol),
-                f"Mismatch at index {k}: {list1[k]} != {list2[k]}",
-            )
+    def test_tree(self):
+        self.bfs_equal(6, [(0,1), (0,2), (1,3), (1,4), (2,5)], 0)
 
-    def run_bfs_test(self, edges, n, start=0):
-        graph_c, A_s = self.build_bfs_graph(edges, n)
-        dist_c = bfs_c(start, graph_c, n)
-        v_s, _, _ = bfs_s(start, A_s)
+    def test_cycle(self):
+        self.bfs_equal(4, [(0,1), (1,2), (2,3), (3,0)], 0)
+
+    def test_diamond(self):
+        self.bfs_equal(4, [(0,1), (0,2), (1,3), (2,3)], 0)
+
+    def test_start_not_zero(self):
+        self.bfs_equal(3, [(1,0), (1,2)], 1)
+
+class TestCompareTc(unittest.TestCase):
+    def tc_equal(self, n, edges):
+        graph, A = build_graph(edges, n, directed=False, upper=True)
+        self.assertEqual(tc_n(graph, n), tc_s(A))
+
+    def test_no_edges(self):
+        self.tc_equal(3, [])
+
+    def test_one_edge(self):
+        self.tc_equal(2, [(0, 1)])
+
+    def test_two_edges(self):
+        self.tc_equal(3, [(0, 1), (1, 2)])
+
+    def test_triangle(self):
+        self.tc_equal(3, [(0, 1), (1, 2), (0, 2)])
+
+    def test_square(self):
+        self.tc_equal(4, [(0, 1), (1, 2), (2, 3), (0, 3)])
+
+    def test_k4(self):
+        self.tc_equal(4, [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)])
+
+    def test_two_triangles_share_edge(self):
+        self.tc_equal(4, [(0, 1), (0, 2), (1, 2), (1, 3), (2, 3)])
+
+    def test_two_triangles_share_vertex(self):
+        self.tc_equal(5, [(0, 1), (0, 2), (1, 2), (0, 3), (0, 4), (3, 4)])
+
+    def test_triangle_with_tail(self):
+        self.tc_equal(4, [(0, 1), (0, 2), (1, 2), (2, 3)])
+
+    def test_cycle5(self):
+        self.tc_equal(5, [(0, 1), (1, 2), (2, 3), (3, 4), (0, 4)])
+
+    def test_star(self):
+        self.tc_equal(4, [(0, 1), (0, 2), (0, 3)])
+
+    def test_k5(self):
+        self.tc_equal(5, [(i, j) for i in range(5) for j in range(i + 1, 5)])
+class TestCompareSssp(unittest.TestCase):
+    def sssp_equal(self, n, edges, start):
+        graph, A = build_graph(edges, n, weighted=True)
+        dist_n = sssp_n(start, graph, n)
+        v_s = sssp_s(start, A)
         idx, vals = v_s.to_lists()
-        dist_s = [BFS_INF] * n
-        for k in range(len(idx)):
-            dist_s[idx[k]] = vals[k] - 1
-        self.check_lists_equal(dist_c, dist_s)
+        dist_s = [INF] * n
+        for i, val in zip(idx, vals):
+            dist_s[i] = val
+        dist_s[start] = 0.0
 
-    def test_bfs_linear(self):
-        self.run_bfs_test([(0, 1), (1, 2), (2, 3), (3, 4)], n=5)
+        for i, (a, b) in enumerate(zip(dist_n, dist_s)):
+            if math.isinf(a):
+                self.assertTrue(math.isinf(b), f"v{i}: classic={a}, spla={b}")
+            else:
+                self.assertAlmostEqual(a, b, places=3,
+                                       msg=f"v{i}: classic={a}, spla={b}")
 
-    def test_bfs_star(self):
-        self.run_bfs_test([(0, 1), (0, 2), (0, 3), (0, 4)], n=5)
+    def test_one_edge(self):
+        self.sssp_equal(2, [(0, 1, 2.7)], 0)
 
-    def test_bfs_disconnected(self):
-        self.run_bfs_test([(0, 1), (2, 3)], n=4)
+    def test_line(self):
+        self.sssp_equal(4, [(0, 1, 1.3), (1, 2, 2.4), (2, 3, 3.1)], 0)
 
-    def test_bfs_cycle(self):
-        self.run_bfs_test([(0, 1), (1, 2), (2, 3), (3, 0)], n=4)
+    def test_two_paths(self):
+        self.sssp_equal(3, [(0, 1, 5.5), (1, 2, 2.2), (0, 2, 9.7)], 0)
 
-    def test_bfs_fully_connected(self):
-        self.run_bfs_test([(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)], n=4)
+    def test_diamond(self):
+        self.sssp_equal(4, [(0, 1, 2.4), (0, 2, 1.1), (1, 3, 1.8), (2, 3, 5.3)], 0)
 
-    def run_sssp_test(self, edges, n, start=0):
-        graph_c, A_s = self.build_sssp_graph(edges, n)
-        dist_c = sssp_c(start, graph_c, n)
-        v_s = sssp_s(start, A_s)
+    def test_disconnected(self):
+        self.sssp_equal(4, [(0, 1, 1.6), (2, 3, 4.2)], 0)
+
+    def test_start_not_zero(self):
+        self.sssp_equal(3, [(1, 0, 2.5), (1, 2, 3.7)], 1)
+
+    def test_big_weights(self):
+        self.sssp_equal(3, [(0, 1, 1000.5), (1, 2, 2000.4), (0, 2, 5000.9)], 0)
+
+    def test_cycle(self):
+        self.sssp_equal(3, [(0, 1, 1.1), (1, 2, 2.3), (2, 0, 0.7)], 0)
+        
+class TestComparePr(unittest.TestCase):
+    def pr_equal(self, n, edges, alpha=0.85, eps=1e-6):
+        Ai, Ax, A = build_pr(edges, n, alpha)
+        p_n = pr_n(Ai, Ax, alpha, eps)
+        v_s = pr_s(A, alpha, eps)
         idx, vals = v_s.to_lists()
-        dist_s = [int(1e9)] * n
-        for k in range(len(idx)):
-            dist_s[idx[k]] = vals[k]
-        self.check_lists_equal(dist_c, dist_s)
-
-    def test_sssp_linear(self):
-        self.run_sssp_test([(0, 1, 5), (1, 2, 2), (2, 3, 1)], n=4)
-
-    def test_sssp_triangle_inequality(self):
-        self.run_sssp_test([(0, 1, 5), (0, 2, 10), (1, 2, 1)], n=3)
-
-    def test_sssp_isolated(self):
-        self.run_sssp_test([(0, 1, 3)], n=4)
-
-    def test_sssp_two_paths(self):
-        self.run_sssp_test([(0, 1, 10), (1, 3, 10), (0, 2, 2), (2, 3, 2)], n=4)
-
-    def test_sssp_complex_graph(self):
-        edges = [(0, 1, 4), (0, 2, 1), (2, 1, 2), (1, 3, 1), (2, 3, 5), (3, 4, 3)]
-        self.run_sssp_test(edges, n=5)
-
-    def run_tc_test(self, edges, n):
-        graph_c, A_s = self.build_tc_graph(edges, n)
-        for i in range(n):
-            graph_c[i].sort()
-        self.assertEqual(tc_c(graph_c, n), tc_s(A_s))
-
-    def test_tc_k4(self):
-        self.run_tc_test([(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)], n=4)
-
-    def test_tc_bipartite(self):
-        self.run_tc_test([(0, 1), (1, 2), (2, 3), (3, 0)], n=4)
-
-    def test_tc_two_triangles(self):
-        self.run_tc_test([(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3)], n=6)
-
-    def test_tc_empty(self):
-        self.run_tc_test([], n=3)
-
-    def test_tc_one_edge(self):
-        self.run_tc_test([(0, 1)], n=3)
-
-    def run_pr_test(self, edges, n, alpha=0.85, eps=1e-5):
-        adj_in, out_degree, A_s = self.build_pr_graph(edges, n, alpha)
-        p_c, _ = pr_c(adj_in, out_degree, n, alpha, eps)
-        p_s_vec, _ = pr_s(A_s, alpha, eps)
-        idx, vals = p_s_vec.to_lists()
         p_s = [0.0] * n
-        for k in range(len(idx)):
-            p_s[idx[k]] = vals[k]
-        self.check_lists_close(p_c, p_s, tol=1e-3)
+        for i, val in zip(idx, vals):
+            p_s[i] = val
 
-    def test_pr_star(self):
-        self.run_pr_test([(1, 0), (2, 0), (3, 0)], n=4)
+        for i, (a, b) in enumerate(zip(p_n, p_s)):
+            self.assertAlmostEqual(a, b, places=3,
+                                   msg=f"v{i}: classic={a}, spla={b}")
 
-    def test_pr_chain(self):
-        self.run_pr_test([(0, 1), (1, 2)], n=3)
+    def test_single(self):
+        self.pr_equal(1, [])
 
-    def test_pr_complete(self):
-        self.run_pr_test([(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)], n=4)
+    def test_one_edge(self):
+        self.pr_equal(2, [(0, 1)])
 
-    def test_pr_disconnected(self):
-        self.run_pr_test([(0, 1), (2, 3)], n=4)
+    def test_line(self):
+        self.pr_equal(4, [(0, 1), (1, 2), (2, 3)])
 
+    def test_cycle(self):
+        self.pr_equal(3, [(0, 1), (1, 2), (2, 0)])
+
+    def test_star(self):
+        self.pr_equal(4, [(0, 1), (0, 2), (0, 3)])
+
+    def test_dangling(self):
+        self.pr_equal(3, [(0, 1), (1, 2)])
+
+    def test_k4(self):
+        self.pr_equal(4, [(0,1), (0,2), (0,3), (1,2), (1,3), (2,3)])
+
+    def test_diamond(self):
+        self.pr_equal(4, [(0,1), (0,2), (1,3), (2,3)])
 
 if __name__ == "__main__":
     unittest.main()
