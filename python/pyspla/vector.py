@@ -776,3 +776,8 @@ class Vector(Object):
 
     def _get_task(self, task):
         return ctypes.POINTER(ctypes.c_void_p)()
+
+    def set_fill_value(self, value):
+        from .scalar import Scalar
+        scalar = value if isinstance(value, Scalar) else Scalar(self._dtype, value)
+        check(backend().spla_Vector_set_fill_value(self.hnd, scalar.hnd))
