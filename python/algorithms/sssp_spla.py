@@ -8,26 +8,35 @@ def make_vector(n):
     v.set_fill_value(Scalar(FLOAT, INF))
     return v
 
-def sssp_spla(start: int, A: Matrix):
+
+def sssp_spla(start, A, push_only=False, pull_only=False, push_pull=True, front_factor=0.05):
     n = A.n_rows
+    if not (push_only or pull_only or push_pull):
+        push_only = True
+
+    mask = Vector(n, FLOAT)
+    init_inf = Scalar(FLOAT, INF)
     dist = make_vector(n)
     dist.set(start, 0.0)
-    mask = Vector.dense(n, FLOAT, 1.0)
-    init_inf = Scalar(FLOAT, INF)
-    while True:
-        _prev_idx, prev_vals = dist.to_lists()
-        new = make_vector(n)
-        dist.vxm(mask, 
-                 A,
-                 op_mult=FLOAT.PLUS,
-                 op_add=FLOAT.MIN,
-                 op_select=FLOAT.ALWAYS,
-                 init=init_inf,
-                 out=new)
-        out = make_vector(n)
-        dist.eadd(FLOAT.MIN, new, out=out)
-        dist = out
-        _new_idx, new_vals = dist.to_lists()
-        if prev_vals == new_vals:
-            break
+    feedback = make_vector(n)
+    feedback.set(start, 0.0)
+    frontier = make_vector(n)
+    fs = feedback.count_mf().get()
+
+    while fs > 0:
+        front_density = fs / n
+        is_push_better = front_density <= front_factor
+
+        if push_only or (push_pull and is_push_better):
+            feedback.vxm(mask, A,
+                         op_mult=FLOAT.PLUS, op_add=FLOAT.MIN,
+                         op_select=FLOAT.ALWAYS, init=init_inf, out=frontier)
+        else:
+            A.mxv(mask, feedback,
+                  op_mult=FLOAT.PLUS, op_add=FLOAT.MIN,
+                  op_select=FLOAT.ALWAYS, init=init_inf, out=frontier)
+
+        dist.eadd_fdb(frontier, FLOAT.MIN, feedback)
+        fs = feedback.count_mf().get()
+
     return dist
