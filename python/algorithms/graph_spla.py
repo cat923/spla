@@ -1,6 +1,11 @@
 from scipy.io import mmread
 from pyspla import Matrix, INT, FLOAT
 
+
+def sort_by_ij(I, J, V):
+    return map(list, zip(*sorted(zip(I, J, V))))
+
+
 def read_spla(filepath, dtype=FLOAT):
     coo = mmread(filepath).tocoo()
     n = int(max(coo.shape))
@@ -9,7 +14,9 @@ def read_spla(filepath, dtype=FLOAT):
     vals = coo.data.astype(float).tolist()
     if dtype == INT:
         vals = [int(v) for v in vals]
+    rows, cols, vals = sort_by_ij(rows, cols, vals)
     return Matrix.from_lists(rows, cols, vals, shape=(n, n), dtype=dtype)
+
 
 def read_vectors_spla(filepath, dtype=FLOAT):
     with open(filepath) as f:
@@ -19,7 +26,9 @@ def read_vectors_spla(filepath, dtype=FLOAT):
     if dtype == INT:
         V = [int(v) for v in V]
     n = max(max(I), max(J)) + 1
+    I, J, V = sort_by_ij(I, J, V)
     return Matrix.from_lists(I, J, V, shape=(n, n), dtype=dtype)
+
 
 def read_mtx_pr_spla(file_path, alpha=0.85):
     coo = mmread(file_path).tocoo()
@@ -29,13 +38,10 @@ def read_mtx_pr_spla(file_path, alpha=0.85):
     out_deg = [0] * n
     for i in rows:
         out_deg[i] += 1
-    weights = []
-    for i in rows:
-        if out_deg[i] > 0:
-            weights.append(alpha / out_deg[i])
-        else:
-            weights.append(0.0)
+    weights = [alpha / out_deg[i] if out_deg[i] > 0 else 0.0 for i in rows]
+    rows, cols, weights = sort_by_ij(rows, cols, weights)
     return Matrix.from_lists(rows, cols, weights, shape=(n, n), dtype=FLOAT)
+
 
 def read_vectors_pr_spla(file_path, alpha=0.85):
     with open(file_path) as f:
@@ -45,10 +51,6 @@ def read_vectors_pr_spla(file_path, alpha=0.85):
     out_deg = [0] * n
     for i in I:
         out_deg[i] += 1
-    V = []
-    for i in I:
-        if out_deg[i] > 0:
-            V.append(alpha / out_deg[i])
-        else:
-            V.append(0.0)
+    V = [alpha / out_deg[i] if out_deg[i] > 0 else 0.0 for i in I]
+    I, J, V = sort_by_ij(I, J, V)
     return Matrix.from_lists(I, J, V, shape=(n, n), dtype=FLOAT)
