@@ -71,9 +71,9 @@ int main(int argc, const char* const* argv) {
     desc->set_traversal_mode(static_cast<spla::Descriptor::TraversalMode>(args[OPT_PUSH_PULL].as<int>() - 1));
     desc->set_front_factor(args[OPT_FRONT_FACTOR].as<float>());
 
-    const auto&      Ai = loader.get_Ai();
-    const auto&      Aj = loader.get_Aj();
-    const auto&      Aw = loader.get_Aw();
+    const auto& Ai = loader.get_Ai();
+    const auto& Aj = loader.get_Aj();
+    const auto& Aw = loader.get_Aw();
     std::cout << std::endl;
     for (std::size_t k = 0; k < loader.get_n_values(); ++k) {
         A->set_float(Ai[k], Aj[k], Aw[k]);

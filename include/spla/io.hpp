@@ -81,8 +81,8 @@ namespace spla {
         [[nodiscard]] SPLA_API const std::vector<uint>& get_Ai() const;
         [[nodiscard]] SPLA_API const std::vector<uint>& get_Aj() const;
         [[nodiscard]] SPLA_API const std::vector<float>& get_Aw() const;
-        [[nodiscard]] SPLA_API uint                     get_n_rows() const;
-        [[nodiscard]] SPLA_API uint                     get_n_cols() const;
+        [[nodiscard]] SPLA_API uint                      get_n_rows() const;
+        [[nodiscard]] SPLA_API uint                      get_n_cols() const;
         [[nodiscard]] SPLA_API std::size_t get_n_values() const;
 
     private:

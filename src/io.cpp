@@ -73,8 +73,8 @@ namespace spla {
             n_lines++;
         }
 
-        bool file_is_symmetric = first_line.find("symmetric") != std::string::npos;
-        bool file_is_pattern = first_line.find("pattern") != std::string::npos;
+        bool file_is_symmetric    = first_line.find("symmetric") != std::string::npos;
+        bool file_is_pattern      = first_line.find("pattern") != std::string::npos;
         bool effective_undirected = make_undirected || file_is_symmetric;
 
         std::size_t       nnz;
@@ -101,11 +101,11 @@ namespace spla {
         char              buffer[BUFFER_CAPACITY + 1];
 
         // read data
-        std::size_t       to_count       = 0;
-        std::size_t       to_read        = nnz;
-        std::size_t to_preallocate = to_read * (effective_undirected ? 2 : 1);
-        std::vector<uint> Ai;
-        std::vector<uint> Aj;
+        std::size_t        to_count       = 0;
+        std::size_t        to_read        = nnz;
+        std::size_t        to_preallocate = to_read * (effective_undirected ? 2 : 1);
+        std::vector<uint>  Ai;
+        std::vector<uint>  Aj;
         std::vector<float> Aw;
         // preallocate to avoid copy
         Ai.reserve(to_preallocate);
