@@ -1,4 +1,5 @@
 import warnings
+
 warnings.simplefilter("ignore", DeprecationWarning)
 
 import heapq
@@ -20,10 +21,10 @@ from tc_spla import tc_spla
 from tc_classic import tc_naive as tc_classic
 
 
-DATA     = Path(__file__).parent.parent.parent / "bench" / "dataset"
-GRAPH    = DATA / "belgium_osm.mtx"
-DIRECTED = DATA / "amazon-2008.mtx"
-UPPER    = DATA / "upper" / "belgium_osm.mtx"
+DATA = Path(__file__).parent.parent.parent / "bench" / "dataset"
+UNDIRECTED_GRAPH = DATA / "belgium_osm.mtx"
+DIRECTED_GRAPH = DATA / "amazon-2008.mtx"
+UPPER = DATA / "upper" / "belgium_osm.mtx"
 
 
 def split(A):
@@ -72,7 +73,6 @@ def short_distance(n, adj, start):
 
 
 class TestBfs(unittest.TestCase):
-
     def _check(self, mtx):
         A = read_spla(str(mtx), INT)
         n, pairs, _ = split(A)
@@ -86,14 +86,13 @@ class TestBfs(unittest.TestCase):
         self.assertEqual(ref, got)
 
     def test_symmetric(self):
-        self._check(GRAPH)
+        self._check(UNDIRECTED_GRAPH)
 
     def test_directed(self):
-        self._check(DIRECTED)
+        self._check(DIRECTED_GRAPH)
 
 
 class TestSssp(unittest.TestCase):
-
     def _check(self, mtx, **kwargs):
         A = read_spla(str(mtx), FLOAT)
         n, pairs, weights = split(A)
@@ -110,17 +109,16 @@ class TestSssp(unittest.TestCase):
             self.assertLessEqual(abs(a - b), 1e-4, f"v{i}: ref={a} got={b}")
 
     def test_symmetric_push(self):
-        self._check(GRAPH, push_only=True, pull_only=False, push_pull=False)
+        self._check(UNDIRECTED_GRAPH, push_only=True, pull_only=False, push_pull=False)
 
     def test_symmetric_pull(self):
-        self._check(GRAPH, push_only=False, pull_only=True, push_pull=False)
+        self._check(UNDIRECTED_GRAPH, push_only=False, pull_only=True, push_pull=False)
 
     def test_directed_push(self):
-        self._check(DIRECTED, push_only=True, pull_only=False, push_pull=False)
+        self._check(DIRECTED_GRAPH, push_only=True, pull_only=False, push_pull=False)
 
 
 class TestPr(unittest.TestCase):
-
     def _check(self, mtx):
         A = read_mtx_pr_spla(str(mtx))
         n, pairs, weights = split(A)
@@ -141,14 +139,13 @@ class TestPr(unittest.TestCase):
         self.assertLess(max_diff, 1e-4, f"max diff {max_diff:.2e}")
 
     def test_symmetric(self):
-        self._check(GRAPH)
+        self._check(UNDIRECTED_GRAPH)
 
     def test_directed(self):
-        self._check(DIRECTED)
+        self._check(DIRECTED_GRAPH)
 
 
 class TestTc(unittest.TestCase):
-
     def test_upper(self):
         A = read_spla(str(UPPER), INT)
         n, pairs, _ = split(A)
