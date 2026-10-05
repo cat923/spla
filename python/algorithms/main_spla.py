@@ -18,13 +18,50 @@ INF = math.inf
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--algo", choices=["bfs", "sssp", "pr", "tc"], required=True)
-    parser.add_argument("-m", "--matrix", type=Path)
-    parser.add_argument("-v", "--vectors", type=Path)
-    parser.add_argument("-o", "--output", type=Path, default="result.txt")
-    parser.add_argument("-s", "--start", type=int, default=0)
-    parser.add_argument("-a", "--alpha", type=float, default=0.85)
-    parser.add_argument("-e", "--eps", type=float, default=1e-4)
+    parser.add_argument(
+        "--algo",
+        choices=["bfs", "sssp", "pr", "tc"],
+        required=True,
+        help="Algorithm to run: "
+             "bfs - Breadth-First Search, "
+             "sssp - Single-Source Shortest Paths, "
+             "pr - PageRank, "
+             "tc - Triangle Counting",
+    )
+    parser.add_argument(
+        "-m", "--matrix",
+        type=Path,
+        help="Path to graph in Matrix Market format (.mtx)",
+    )
+    parser.add_argument(
+        "-v", "--vectors",
+        type=Path,
+        help="Path to graph in vectors format (.txt)",
+    )
+    parser.add_argument(
+        "-o", "--output",
+        type=Path,
+        default="result.txt",
+        help="Output file path",
+    )
+    parser.add_argument(
+        "-s", "--start",
+        type=int,
+        default=0,
+        help="Start vertex(default: 0)",
+    )
+    parser.add_argument(
+        "-a", "--alpha",
+        type=float,
+        default=0.85,
+        help="Damping factor(default: 0.85)",
+    )
+    parser.add_argument(
+        "-e", "--eps",
+        type=float,
+        default=1e-4,
+        help="Convergence tolerance(default: 1e-4)",
+    )
     args = parser.parse_args()
 
     if not args.matrix and not args.vectors:
