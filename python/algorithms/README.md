@@ -1,9 +1,7 @@
 # Graph Algorithms with SPLA
 
-This project contains two implementations of graph algorithms:
-
-- **Classic (CPU):** Python reference implementation
-- **SPLA (GPU):** implementation using sparse linear algebra primitives from SPLA
+This project provides a Python implementation of graph algorithms using sparse
+linear algebra primitives from SPLA on GPU
 
 Tests (`test_compare.py`) checks that both implementations produce identical results.
 
@@ -23,6 +21,8 @@ python -m unittest test_compare.py -v
 | Triangle Counting | `--algo tc` |
 
 ---
+
+SSSP should be used with undirected graphs only
 
 ## Installation
 
