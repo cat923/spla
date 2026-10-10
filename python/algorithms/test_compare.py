@@ -73,23 +73,29 @@ def short_distance(n, adj, start):
 
 
 class TestBfs(unittest.TestCase):
-    def _check(self, mtx):
+    def _check(self, mtx, **kwargs):
         A = read_spla(str(mtx), INT)
         n, pairs, _ = split(A)
 
         ref = bfs_classic(0, adj_plain(n, pairs), n)
         ref = [(x + 1) if x is not None else 0 for x in ref]
 
-        v, _, _ = bfs_spla(0, A)
+        v, _, _ = bfs_spla(0, A, **kwargs)
         got = to_list(v, n, 0)
 
         self.assertEqual(ref, got)
 
-    def test_symmetric(self):
-        self._check(UNDIRECTED_GRAPH)
+    def test_symmetric_push(self):
+        self._check(UNDIRECTED_GRAPH, push_only=True, pull_only=False, push_pull=False)
 
-    def test_directed(self):
-        self._check(DIRECTED_GRAPH)
+    def test_symmetric_pull(self):
+        self._check(UNDIRECTED_GRAPH, push_only=False, pull_only=True, push_pull=False)
+
+    def test_symmetric_push_pull(self):
+        self._check(UNDIRECTED_GRAPH, push_only=False, pull_only=False, push_pull=True)
+
+    def test_directed_push(self):
+        self._check(DIRECTED_GRAPH, push_only=True, pull_only=False, push_pull=False)
 
 
 class TestSssp(unittest.TestCase):

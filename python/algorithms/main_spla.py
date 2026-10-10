@@ -70,9 +70,10 @@ def main():
     if args.algo == "bfs":
         if args.matrix:
             A = read_spla(str(args.matrix), dtype=INT)
+            v, count, depth = bfs_spla(args.start, A)
         else:
             A = read_vectors_spla(str(args.vectors), dtype=INT)
-        v, count, depth = bfs_spla(args.start, A)
+            v, count, depth = bfs_spla(args.start, A, push_only=True, pull_only=False, push_pull=False)
         with open(args.output, "w") as f_out:
             f_out.write(f"Reached vertices: {count}\n")
             f_out.write(f"Max depth: {depth - 1}\n")
@@ -84,9 +85,10 @@ def main():
     elif args.algo == "sssp":
         if args.matrix:
             A = read_spla(str(args.matrix), dtype=FLOAT)
+            v = sssp_spla(args.start, A)
         else:
             A = read_vectors_spla(str(args.vectors), dtype=FLOAT)
-        v = sssp_spla(args.start, A)
+             v = sssp_spla(args.start, A, push_only=True, pull_only=False, push_pull=False)
         with open(args.output, "w") as f_out:
             idx, vals = v.to_lists()
             for k in range(len(idx)):
